@@ -1,249 +1,827 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Probability Minesweeper</title>
+<meta charset="utf-8" />
+<title>Probability Minesweeper — Polished</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
+/* =======================
+   Theme variables (light & dark)
+   ======================= */
+:root{
+  --bg1: #89f7fe;
+  --bg2: #66a6ff;
+  --card-bg: #ffffff;
+  --card-alt: #e8f6ff;
+  --text: #1b2b3a;
+  --muted: #3a5166;
+  --accent: #2a4d69;
+  --accent-2:#356096;
+  --success:#27ae60;
+  --danger:#e74c3c;
+  --flag:#f1c40f;
+  --glass: rgba(255,255,255,0.9);
+}
+body.dark {
+  --bg1: #0f1724;
+  --bg2: #102033;
+  --card-bg: #0f1724;
+  --card-alt: #071428;
+  --text: #e6f0fb;
+  --muted: #9fb4d1;
+  --accent: #3fa0ff;
+  --accent-2:#2774c9;
+  --success:#57d98c;
+  --danger:#ff6b6b;
+  --flag:#ffd54f;
+  --glass: rgba(15,23,36,0.8);
+}
+
 /* Animated background */
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #89f7fe, #66a6ff, #ff9a9e, #fad0c4);
-  background-size: 400% 400%;
-  animation: gradientAnim 20s ease infinite;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  margin: 0;
+html,body{height:100%;margin:0;}
+body{
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(120deg,var(--bg1),var(--bg2));
+  background-size: 300% 300%;
+  animation: bgShift 18s ease infinite;
+  display:flex;justify-content:center;align-items:flex-start;
+  color:var(--text);
+  padding:28px;
 }
-@keyframes gradientAnim {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-#container { display: flex; gap:30px; margin-top:20px; }
-/* Main game area */
-#main { display:flex; flex-direction:column; align-items:center; }
-h1 { color:#2a4d69; text-shadow:1px 1px 3px rgba(0,0,0,0.3); }
-
-/* Board */
-#board { display:grid; grid-gap:6px; margin-top:20px; }
-.cell {
-  width:40px; height:40px;
-  background: linear-gradient(145deg,#4f81c7,#2a64a0);
-  display:flex; justify-content:center; align-items:center;
-  cursor:pointer; font-weight:bold; border-radius:10px;
-  user-select:none; color:white; font-size:18px;
-  box-shadow: 3px 3px 6px rgba(0,0,0,0.3), inset 0 0 5px rgba(255,255,255,0.2);
-  backface-visibility: hidden;
+@keyframes bgShift{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
 }
 
-/* Hover effect without scaling to prevent blur */
-.cell:hover {
-  box-shadow: 2px 2px 10px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.3);
+/* Layout */
+.container{
+  width:1100px;
+  max-width:calc(100% - 40px);
+  display:grid;
+  grid-template-columns: 1fr 320px;
+  gap:24px;
+  align-items:start;
 }
 
-.revealed {
-  background: linear-gradient(145deg,#d9f7ff,#a7d4ed);
-  color:#2a4d69;
-  box-shadow: inset 2px 2px 6px rgba(0,0,0,0.2), 0 0 6px rgba(255,255,255,0.4);
+/* Main panel */
+.panel {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35));
+  background-clip:padding-box;
+  border-radius:14px;
+  padding:18px;
+  box-shadow: 0 8px 30px rgba(12,32,63,0.18);
+  backdrop-filter: blur(6px);
 }
-.cell.revealed[data-count] { text-shadow:0 0 3px rgba(0,0,0,0.5); }
-
-/* Mines & Flags */
-.mine {
-  background: radial-gradient(circle,#e74c3c 40%,#c0392b 100%);
-  color:white; box-shadow:0 0 12px rgba(231,76,60,0.8);
+body.dark .panel{
+  background: linear-gradient(180deg,var(--card-bg), var(--card-alt));
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
 }
-.flag {
-  background: radial-gradient(circle,#f1c40f 40%,#d4ac0d 100%);
-  color:white; box-shadow:0 0 10px rgba(241,196,15,0.8);
+.header {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:10px;
+}
+.title {
+  display:flex; align-items:center; gap:12px;
+}
+.title h1{ margin:0; font-size:20px; color:var(--accent); letter-spacing:0.2px;}
+.controls { display:flex; gap:10px; align-items:center; }
+
+/* Question area */
+.questionCard {
+  width:100%;
+  border-radius:12px;
+  padding:14px;
+  background:var(--card-bg);
+  box-shadow: 0 6px 14px rgba(8,24,48,0.08);
+  margin-bottom:12px;
+}
+body.dark .questionCard{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+
+.q-text { font-weight:600; color:var(--text); margin-bottom:8px; font-size:16px; }
+.options { display:flex; gap:8px; flex-wrap:wrap; }
+.optionBtn {
+  padding:8px 12px; border-radius:8px; border: none; cursor:pointer;
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));
+  color:white; font-weight:600; min-width:90px;
+  box-shadow: 0 6px 12px rgba(16,40,80,0.12);
+  transition: transform .12s ease, box-shadow .12s;
+}
+.optionBtn:hover { transform: translateY(-3px); box-shadow: 0 10px 18px rgba(16,40,80,0.16); }
+.option-correct { background: linear-gradient(180deg,#2ecc71,#27ae60) !important; }
+.option-wrong { background: linear-gradient(180deg,#ff7a7a,#ff6b6b) !important; }
+
+/* Board and cells */
+.boardWrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.metaRow { display:flex; gap:10px; align-items:center; font-size:14px; color:var(--muted); }
+.timer, .flags { padding:6px 10px; background:var(--card-bg); border-radius:10px; box-shadow: 0 6px 12px rgba(8,24,48,0.06); }
+body.dark .timer, body.dark .flags { background: rgba(255,255,255,0.02); box-shadow:none; }
+
+/* board itself */
+.board {
+  display:grid;
+  gap:6px;
+  margin-top:8px;
+  padding:8px;
+  border-radius:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0.15));
+}
+body.dark .board{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
 }
 
-/* Number colors */
-.cell.revealed[data-count="1"]{color:#0000FF;}
-.cell.revealed[data-count="2"]{color:#008000;}
-.cell.revealed[data-count="3"]{color:#FF0000;}
-.cell.revealed[data-count="4"]{color:#800080;}
-.cell.revealed[data-count="5"]{color:#A52A2A;}
-.cell.revealed[data-count="6"]{color:#008080;}
-.cell.revealed[data-count="7"]{color:#000000;}
-.cell.revealed[data-count="8"]{color:#808080;}
-
-/* Question box */
-#questionBox{
-  margin-top:20px; padding:15px 20px;
-  background: linear-gradient(145deg,#ffffff,#cce8ff);
-  border-radius:20px;
-  box-shadow:0 6px 12px rgba(0,0,0,0.25);
-  width:350px; text-align:center;
-  transition: transform 0.2s ease-in-out;
+/* cell base */
+.cell{
+  width:38px; height:38px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:16px; color:white; user-select:none;
+  background: linear-gradient(145deg,#3b7bc0,#284f82);
+  box-shadow: 0 6px 12px rgba(18,44,78,0.18), inset 0 2px 6px rgba(255,255,255,0.07);
+  cursor:pointer;
+  transition: box-shadow .12s, transform .08s;
+  backface-visibility:hidden;
 }
-#questionBox:hover{ transform: scale(1.02); }
 
-.optionBtn{ display:block; margin:5px auto; padding:8px 15px; background:#2a4d69; color:white; border:none; border-radius:8px; cursor:pointer; width:80%; transition: all 0.2s;}
-.optionBtn:hover{ box-shadow: 0 0 8px rgba(255,255,255,0.4); }
+/* hover only shadow (no transform, prevents blur) */
+.cell:hover{ box-shadow: 0 12px 22px rgba(16,40,80,0.22), inset 0 2px 8px rgba(255,255,255,0.06); }
 
-/* Sidebar */
-#sidebar{ width:260px; font-size:14px; line-height:1.5; }
-#sidebarContent{
-  background: linear-gradient(145deg,#ffffff,#d0f0ff);
-  padding:12px; border-radius:15px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.25);
+/* revealed animation (fade & pop) */
+.revealed{
+  background: linear-gradient(145deg,#e6fbff,#c5e8ff);
+  color:var(--text);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.06);
+  animation: revealPop .12s ease-out;
 }
-#buttonsContainer button{
-  background: linear-gradient(145deg,#2a4d69,#1e3952);
-  color:white; border-radius:10px; padding:10px 20px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-  transition: all 0.2s; cursor:pointer; margin-top:10px;
+@keyframes revealPop{
+  from { transform: scale(.92); opacity: .2; }
+  to   { transform: scale(1); opacity: 1; }
 }
-#buttonsContainer button:hover{ box-shadow: 0 0 12px rgba(255,255,255,0.5); }
 
-/* Main buttons & messages */
-#startBtn{ margin-top:15px; padding:15px 30px; font-size:18px; background:#2a4d69; color:white; border:none; border-radius:10px; cursor:pointer; transition: all 0.2s;}
-#startBtn:hover{ box-shadow:0 0 10px rgba(255,255,255,0.5); }
+/* number colors (classic) */
+.cell.revealed[data-count="1"]{ color:#0b5cff; font-weight:800;}
+.cell.revealed[data-count="2"]{ color:#007a2e; font-weight:800;}
+.cell.revealed[data-count="3"]{ color:#d42c2c; font-weight:800;}
+.cell.revealed[data-count="4"]{ color:#6d2bb7; font-weight:800;}
+.cell.revealed[data-count="5"]{ color:#b24b3b; font-weight:800;}
+.cell.revealed[data-count="6"]{ color:#0b7a7a; font-weight:800;}
+.cell.revealed[data-count="7"]{ color:#111111; font-weight:800;}
+.cell.revealed[data-count="8"]{ color:#666666; font-weight:800;}
 
-#message{ font-size:16px; font-weight:bold; min-height:22px; margin-top:10px; }
-#winMessage{ font-size:20px; font-weight:bold; color:#27ae60; text-align:center; margin-top:10px; }
-#flagCounter{ font-weight:bold; margin-top:10px; color:#1e3c72; }
+/* mine & flag visuals */
+.cell.mine{ background: radial-gradient(circle,#ff5c5c 30%, #c92d2d 100%); color:white; box-shadow: 0 0 18px rgba(255,92,92,0.5);}
+.cell.flag{ background: radial-gradient(circle,#ffd54f 30%, #caa10f 100%); color:#2b2b2b; box-shadow: 0 0 14px rgba(255,213,79,0.35); }
+
+/* bomb flash & shake (used when losing) */
+@keyframes bombFlash{
+  0%{ box-shadow: 0 0 4px rgba(255,80,80,0.6); transform: scale(1); }
+  50%{ box-shadow: 0 0 20px rgba(255,80,80,0.95); transform: scale(1.05) rotate(-2deg); }
+  100%{ box-shadow: 0 0 4px rgba(255,80,80,0.6); transform: scale(1); }
+}
+@keyframes shake {
+  0%{ transform:translateX(0); }
+  20%{ transform:translateX(-6px);}
+  40%{ transform:translateX(6px);}
+  60%{ transform:translateX(-4px);}
+  80%{ transform:translateX(4px);}
+  100%{ transform:translateX(0);}
+}
+.bomb-anim{ animation: bombFlash .6s ease 0s 2, shake .32s linear 0s 2; }
+
+/* sidebar (right) */
+.sidePanel {
+  display:flex; flex-direction:column; gap:12px;
+}
+.sideCard {
+  background:var(--card-bg); padding:12px; border-radius:12px; box-shadow: 0 8px 20px rgba(8,24,48,0.08);
+}
+body.dark .sideCard { background: linear-gradient(180deg,var(--card-bg),var(--card-alt)); box-shadow:none; }
+
+/* small controls */
+.select, .smallBtn, .modeToggle {
+  padding:8px 10px; border-radius:8px; border:none;
+  background: linear-gradient(180deg,#f2f9ff,#e0f3ff); color:var(--text); cursor:pointer;
+  box-shadow: 0 6px 12px rgba(8,30,64,0.06);
+}
+body.dark .select, body.dark .smallBtn, body.dark .modeToggle { background: rgba(255,255,255,0.02); color:var(--muted); box-shadow:none; }
+
+/* leaderboard table */
+.leaderboard { width:100%; border-collapse:collapse; font-size:14px; }
+.leaderboard th, .leaderboard td { text-align:left; padding:6px 8px; }
+.leaderboard tr:nth-child(even){ background: rgba(0,0,0,0.02); }
+
+/* responsive */
+@media (max-width:1000px){
+  .container{ grid-template-columns: 1fr; padding-bottom:80px; }
+  #board{ margin-left:auto; margin-right:auto; }
+}
 </style>
 </head>
 <body>
-<div id="container">
-<div id="main">
-<h1>Probability Minesweeper</h1>
-<div id="questionBox">
-  <div id="preStartText">Please press START to start the game</div>
-  <div id="question" style="display:none;"></div>
-  <div id="options" style="display:none;"></div>
-</div>
-<button id="startBtn">Start Game</button>
-<div id="message"></div>
-<div id="flagCounter"></div>
-<div id="board"></div>
-<div id="winMessage"></div>
-</div>
-<div id="sidebar">
-<h3>Game Mechanics</h3>
-<div id="sidebarContent">
-<ul>
-<li>Click a cell to reveal it.</li>
-<li>Answer probability questions correctly to reveal safe cells.</li>
-<li>Right-click a cell to place a flag (max 11).</li>
-<li>Reveal all safe cells to win.</li>
-<li>10 questions per game.</li>
-</ul>
-</div>
-<div id="buttonsContainer">
-<button id="restartBtn" style="display:none;">Restart</button>
-<button id="quitBtn" style="display:none;">Quit</button>
-</div>
-</div>
+<div class="container">
+  <!-- MAIN -->
+  <div class="panel">
+    <div class="header">
+      <div class="title">
+        <h1>Probability Minesweeper</h1>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Answer probability questions to reveal safe tiles</div>
+      </div>
+
+      <div class="controls">
+        <label style="font-size:13px;color:var(--muted);">Difficulty</label>
+        <select id="difficultySelect" class="select" title="Choose difficulty">
+          <option value="easy">Easy (8×8, 10)</option>
+          <option value="medium" selected>Medium (9×9, 11)</option>
+          <option value="hard">Hard (12×12, 24)</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <div id="customControls" style="display:none; gap:8px; align-items:center;">
+          <input id="customSize" type="number" min="6" max="20" value="10" style="width:64px; padding:6px; border-radius:8px;" />
+          <input id="customMines" type="number" min="1" max="200" value="15" style="width:72px; padding:6px; border-radius:8px;" />
+        </div>
+        <button id="modeToggle" class="modeToggle" title="Light / Dark">🌙</button>
+      </div>
+    </div>
+
+    <!-- question card -->
+    <div class="questionCard">
+      <div id="questionBox">
+        <div id="preStartText">Press <strong>Start</strong> to begin</div>
+        <div id="question" class="q-text" style="display:none;"></div>
+        <div id="options" class="options" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- board meta (timer, flags) -->
+    <div class="boardWrap">
+      <div class="metaRow">
+        <div class="timer" id="timer">⏱ Time: 0s</div>
+        <div class="flags" id="flagCounter">🚩 Flags: 0/11</div>
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button id="startBtn" class="smallBtn">Start</button>
+          <button id="restartBtn" class="smallBtn" style="display:none;">Restart</button>
+          <button id="quitBtn" class="smallBtn" style="display:none;">Quit</button>
+        </div>
+      </div>
+
+      <!-- board -->
+      <div id="board" class="board" style="margin-top:6px;"></div>
+
+      <!-- messages -->
+      <div id="message" style="min-height:22px; margin-top:10px; font-weight:700;"></div>
+      <div id="winMessage" style="min-height:26px; margin-top:6px; font-weight:900; color:var(--success);"></div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidePanel">
+    <div class="sideCard">
+      <h4 style="margin:6px 0 10px 0;">Game Mechanics</h4>
+      <ul style="margin:0; padding-left:18px; color:var(--muted); line-height:1.5;">
+        <li>Click a cell to reveal it.</li>
+        <li>Right-click to place a flag (limited to the number of mines).</li>
+        <li>Answer up to 10 questions per game — correct answers reveal safe tiles.</li>
+        <li>Reveal all safe tiles to win and submit your time to the leaderboard.</li>
+      </ul>
+    </div>
+
+    <div class="sideCard">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong>Leaderboard</strong>
+        <small style="color:var(--muted);">Top times</small>
+      </div>
+      <table class="leaderboard" id="leaderboardTable" style="margin-top:8px;">
+        <thead><tr><th>Player</th><th>Time</th></tr></thead>
+        <tbody id="leaderboardBody"><tr><td colspan="2" style="color:var(--muted)">No scores yet</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="sideCard">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <label style="color:var(--muted);">Question Settings</label>
+        <button id="regenerateQuestions" class="smallBtn">Shuffle question set</button>
+        <small style="color:var(--muted);">You can reshuffle the pool between games</small>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-const size=9,minesCount=11,maxQuestions=10;
-let board=[],minePositions=[],currentQuestion=null,questionQueue=[],gameStarted=false,flagsPlaced=0;
+/* ==============
+   Game state & defaults
+   ============== */
+let size = 9;
+let minesCount = 11;
+let maxQuestions = 10;
 
-const questionPool = [
-  { q:"You flip a fair coin once. Probability of heads?", options:["0.25","0.5","0.75","1"], a:"0.5" },
-  { q:"You flip a fair coin once. Probability of tails?", options:["0.25","0.5","0.75","1"], a:"0.5" },
-  { q:"Flip two coins. Probability both heads?", options:["1/4","1/2","1/3","1/6"], a:"1/4" },
-  { q:"Flip two coins. Probability one head and one tail?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Roll a die. Probability of 3?", options:["1/6","1/3","1/2","1/4"], a:"1/6" },
-  { q:"Roll a die. Probability of even number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Roll a die. Probability of number < 4?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Roll two dice. Probability sum is 7?", options:["1/6","1/8","1/12","1/36"], a:"1/6" },
-  { q:"Draw a card. Probability it is red?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
-  { q:"Draw a card. Probability it is black?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
-  { q:"Draw a card. Probability it is a heart?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
-  { q:"Draw a card. Probability it is a spade?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
-  { q:"Draw a card. Probability it is a king?", options:["1/13","1/4","1/52","1/12"], a:"1/13" },
-  { q:"Draw a card. Probability it is a queen?", options:["1/13","1/4","1/52","1/12"], a:"1/13" },
-  { q:"Pick a day randomly. Probability it is Monday?", options:["1/7","1/6","1/5","1/8"], a:"1/7" },
-  { q:"Pick a day randomly. Probability it is Sunday?", options:["1/7","1/6","1/5","1/8"], a:"1/7" },
-  { q:"Bag with 3 red, 2 blue balls. Pick blue?", options:["2/5","3/5","1/2","1/3"], a:"2/5" },
-  { q:"Bag with 3 red, 2 blue balls. Pick red?", options:["3/5","2/5","1/2","1/3"], a:"3/5" },
-  { q:"Bag with 5 green, 5 yellow balls. Pick green?", options:["1/2","1/3","1/5","2/5"], a:"1/2" },
-  { q:"Bag with 5 green, 5 yellow balls. Pick yellow?", options:["1/2","1/3","1/5","2/5"], a:"1/2" },
-  { q:"Bag with 3 red, 3 blue, 4 green. Pick green?", options:["4/10","3/10","1/2","1/3"], a:"4/10" },
-  { q:"Bag with 3 red, 3 blue, 4 green. Pick red?", options:["3/10","4/10","1/2","1/3"], a:"3/10" },
-  { q:"Bag with 3 red, 3 blue, 4 green. Pick blue?", options:["3/10","4/10","1/2","1/3"], a:"3/10" },
-  { q:"Flip three coins. Probability all heads?", options:["1/8","1/6","1/4","1/2"], a:"1/8" },
-  { q:"Flip three coins. Probability exactly two heads?", options:["3/8","1/4","1/2","1/6"], a:"3/8" },
-  { q:"Flip three coins. Probability exactly one tail?", options:["3/8","1/4","1/2","1/6"], a:"3/8" },
-  { q:"Draw one card. Probability not an ace?", options:["48/52","1/13","1/4","1/12"], a:"48/52" },
-  { q:"Draw one card. Probability not red?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
-  { q:"Roll a die twice. Probability both dice 6?", options:["1/36","1/6","1/12","1/18"], a:"1/36" },
-  { q:"Roll a die twice. Probability at least one 6?", options:["11/36","1/6","1/2","5/6"], a:"11/36" },
-  { q:"Flip a coin 4 times. Probability all tails?", options:["1/16","1/8","1/4","1/2"], a:"1/16" },
-  { q:"Flip a coin 4 times. Probability exactly two heads?", options:["3/8","1/4","1/2","1/16"], a:"3/8" },
-  { q:"Pick a number 1-10. Probability even?", options:["1/2","1/3","1/5","1/10"], a:"1/2" },
-  { q:"Pick a number 1-10. Probability divisible by 5?", options:["1/5","1/2","1/10","1/3"], a:"1/5" },
-  { q:"Pick a number 1-6. Probability not 6?", options:["5/6","1/6","1/3","1/2"], a:"5/6" },
-  { q:"Pick a number 1-6. Probability greater than 4?", options:["1/3","1/2","1/6","1/4"], a:"1/3" },
-  { q:"Roll a die. Probability number ≤ 4?", options:["2/3","1/2","1/4","1/6"], a:"2/3" },
-  { q:"Roll a die. Probability number > 4?", options:["1/3","1/2","1/4","1/6"], a:"1/3" },
-  { q:"Bag with 2 red, 3 blue, 5 green. Pick red?", options:["2/10","1/2","3/10","1/3"], a:"2/10" },
-  { q:"Bag with 2 red, 3 blue, 5 green. Pick blue?", options:["3/10","2/10","1/2","1/3"], a:"3/10" },
-  { q:"Bag with 2 red, 3 blue, 5 green. Pick green?", options:["5/10","1/2","3/10","2/10"], a:"5/10" },
-  { q:"Flip two coins. Probability at least one head?", options:["3/4","1/2","1/4","1/3"], a:"3/4" },
-  { q:"Flip three coins. Probability at least one tail?", options:["7/8","1/2","1/4","3/8"], a:"7/8" },
-  { q:"Draw two cards. Probability both aces?", options:["1/221","1/169","1/52","1/13"], a:"1/221" },
-  { q:"Draw two cards. Probability first red, second black?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
-  { q:"Roll a die. Probability prime number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Roll a die. Probability composite number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Pick a month randomly. Probability December?", options:["1/12","1/6","1/11","1/10"], a:"1/12" },
-  { q:"Pick a month randomly. Probability in first quarter?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
-  { q:"Pick a month randomly. Probability in last quarter?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
-  { q:"Flip a coin 3 times. Probability all same?", options:["1/4","1/2","1/3","1/8"], a:"1/4" }
+let board = [];
+let minePositions = [];
+let revealedCount = 0;
+let flagsPlaced = 0;
+let questionQueue = [];
+let currentQuestion = null;
+let gameStarted = false;
+let timerInterval = null;
+let startTime = null;
+let elapsed = 0;
+
+/* Sample 50 questions (can be expanded) */
+const questionPoolMaster = [
+  {q:"There is a bag with 3 red balls and 2 blue balls. Pick one ball. What color is the chance to get blue?", options:["1/2","2/5","3/5","1/3"], a:"2/5"},
+  {q:"A coin is flipped. What is the chance it lands on heads?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"You roll a normal die. What is the chance to get a 6?", options:["1/6","1/3","1/4","1/2"], a:"1/6"},
+  {q:"A bag has 4 green and 1 red candy. Pick one candy. What is the chance it is red?", options:["1/5","1/4","1/2","1/3"], a:"1/5"},
+  {q:"A jar has 3 yellow and 3 blue beads. Pick one. Chance it is yellow?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"You flip a coin twice. What is the chance of getting heads both times?", options:["1/2","1/4","3/4","1/3"], a:"1/4"},
+  {q:"A die is rolled. What is the chance of rolling an even number?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"A bag has 5 red balls and 5 blue balls. Pick one. Chance it is red?", options:["1/2","1/4","3/5","2/5"], a:"1/2"},
+  {q:"You roll a die. Chance to get number less than 4?", options:["1/2","1/3","1/4","3/4"], a:"1/2"},
+  {q:"A jar has 2 green and 3 yellow marbles. Pick one. Chance it is yellow?", options:["2/5","3/5","1/2","1/3"], a:"3/5"},
+  {q:"You flip a coin. Chance it lands tails?", options:["1/2","1/3","2/3","1/4"], a:"1/2"},
+  {q:"A bag has 1 red, 1 blue, 2 green. Pick one. Chance it is green?", options:["1/2","2/4","1/4","1/3"], a:"1/2"},
+  {q:"A die is rolled. Chance to get an odd number?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"You pick a card from 4 red and 1 black. Chance it is black?", options:["1/5","1/4","2/5","1/2"], a:"1/5"},
+  {q:"A coin is flipped 3 times. Chance all are heads?", options:["1/8","1/4","1/2","1/6"], a:"1/8"},
+  {q:"You roll two dice. Chance both show 6?", options:["1/36","1/12","1/6","1/9"], a:"1/36"},
+  {q:"A bag has 3 orange and 1 purple candy. Pick one. Chance it is purple?", options:["1/4","1/3","1/2","3/4"], a:"1/4"},
+  {q:"A jar has 5 red and 5 yellow balls. Pick one. Chance it is yellow?", options:["1/2","1/5","1/3","2/5"], a:"1/2"},
+  {q:"You roll a die. Chance it shows 2 or 3?", options:["1/3","1/2","1/6","2/3"], a:"1/3"},
+  {q:"A bag has 2 blue and 3 green marbles. Pick one. Chance it is blue?", options:["2/5","1/2","3/5","1/3"], a:"2/5"},
+  {q:"Flip a coin. Chance it is heads?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"A die is rolled. Chance it is greater than 4?", options:["1/3","1/2","2/3","1/4"], a:"1/3"},
+  {q:"You pick a marble from 2 red, 2 blue. Chance it is red?", options:["1/2","1/4","1/3","2/3"], a:"1/2"},
+  {q:"Flip a coin twice. Chance both are tails?", options:["1/4","1/2","1/3","3/4"], a:"1/4"},
+  {q:"A bag has 1 red, 2 yellow candies. Pick one. Chance it is yellow?", options:["2/3","1/2","1/3","1/4"], a:"2/3"},
+  {q:"A die is rolled. Chance to get 1 or 2?", options:["1/3","1/2","1/4","2/3"], a:"1/3"},
+  {q:"You pick a candy from 3 red, 3 blue. Chance it is blue?", options:["1/2","1/3","2/3","1/4"], a:"1/2"},
+  {q:"Flip a coin. Chance tails?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"A bag has 4 green, 2 red balls. Pick one. Chance it is green?", options:["2/3","1/2","1/3","1/4"], a:"2/3"},
+  {q:"A die is rolled. Chance it is 3?", options:["1/6","1/2","1/4","1/3"], a:"1/6"},
+  {q:"Pick a card from 2 red, 3 black. Chance it is black?", options:["3/5","2/5","1/2","1/3"], a:"3/5"},
+  {q:"Flip a coin 3 times. Chance exactly 1 head?", options:["3/8","1/8","1/2","1/4"], a:"3/8"},
+  {q:"A jar has 5 blue, 1 green marble. Pick one. Chance green?", options:["1/6","1/5","1/2","1/3"], a:"1/6"},
+  {q:"Roll a die. Chance number <5?", options:["2/3","1/2","1/4","1/3"], a:"2/3"},
+  {q:"A bag has 3 yellow, 2 red balls. Pick one. Chance red?", options:["2/5","1/5","3/5","1/2"], a:"2/5"},
+  {q:"Flip a coin. Chance heads?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"Roll two dice. Chance sum is 7?", options:["6/36","1/6","1/12","5/36"], a:"6/36"},
+  {q:"A jar has 3 orange, 1 purple marble. Pick one. Chance purple?", options:["1/4","1/3","1/2","3/4"], a:"1/4"},
+  {q:"Flip a coin twice. Chance 1 head and 1 tail?", options:["1/2","1/4","3/4","1/3"], a:"1/2"},
+  {q:"Roll a die. Chance to get number ≥4?", options:["1/2","1/3","2/3","1/4"], a:"1/2"},
+  {q:"A bag has 1 red, 1 blue, 1 green ball. Pick one. Chance it is blue?", options:["1/3","1/2","2/3","1/4"], a:"1/3"},
+  {q:"Flip a coin. Chance tails?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"Roll a die. Chance number is even?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"Pick a candy from 3 red, 2 blue. Chance it is red?", options:["3/5","2/5","1/2","1/3"], a:"3/5"},
+  {q:"Flip a coin 2 times. Chance 1 head?", options:["1/2","1/4","1/3","3/4"], a:"1/2"},
+  {q:"A jar has 2 green, 3 yellow marbles. Pick one. Chance green?", options:["2/5","1/2","3/5","1/3"], a:"2/5"},
+  {q:"Roll a die. Chance number >3?", options:["1/2","1/3","2/3","1/4"], a:"1/2"},
+  {q:"Flip a coin. Chance heads?", options:["1/2","1/3","1/4","2/3"], a:"1/2"},
+  {q:"A bag has 4 red, 2 blue balls. Pick one. Chance blue?", options:["1/3","1/2","2/3","1/4"], a:"1/3"},
+  {q:"Roll a die. Chance to get number ≤2?", options:["1/3","1/2","1/6","2/3"], a:"1/3"},
+  {q:"Pick a card from 3 black, 2 red. Chance black?", options:["3/5","2/5","1/2","1/3"], a:"3/5"}
 ];
+ // ~50 questions
 
+let questionPool = [...questionPoolMaster]; // will shuffle as needed
 
-document.getElementById('startBtn').onclick=startGame;
-document.getElementById('restartBtn').onclick=startGame;
-document.getElementById('quitBtn').onclick=resetGame;
+/* ============
+   Utility funcs
+   ============ */
+function $(id){ return document.getElementById(id); }
+function randInt(n){ return Math.floor(Math.random()*n); }
 
-function pickQuestions(){ const copy=[...questionPool],selected=[]; while(selected.length<maxQuestions && copy.length>0){ const idx=Math.floor(Math.random()*copy.length); selected.push(copy.splice(idx,1)[0]); } questionQueue=selected; }
+/* =============
+   Difficulty controls
+   ============= */
+const difficultySelect = $('difficultySelect');
+const customControls = $('customControls');
+const customSize = $('customSize');
+const customMines = $('customMines');
 
-function startGame(){ pickQuestions(); nextQuestion(); gameStarted=true; flagsPlaced=0;
-document.getElementById('preStartText').style.display='none';
-document.getElementById('question').style.display='block';
-document.getElementById('options').style.display='block';
-document.getElementById('winMessage').textContent='';
-document.getElementById('message').textContent='';
-document.getElementById('startBtn').style.display='none';
-document.getElementById('restartBtn').style.display='inline-block';
-document.getElementById('quitBtn').style.display='inline-block';
-document.getElementById('flagCounter').textContent=`Flags: ${flagsPlaced}/${minesCount}`;
+difficultySelect.addEventListener('change', ()=> {
+  const v = difficultySelect.value;
+  if(v==='easy'){ size=8; minesCount=10; }
+  else if(v==='medium'){ size=9; minesCount=11; }
+  else if(v==='hard'){ size=12; minesCount=24; }
+  else if(v==='custom'){ customControls.style.display='flex'; size = parseInt(customSize.value) || 10; minesCount = parseInt(customMines.value) || 15; }
+  updateFlagCounter();
+});
+customSize.addEventListener('change', ()=> { size = Math.max(6, Math.min(20, parseInt(customSize.value)||10)); });
+customMines.addEventListener('change', ()=> { minesCount = Math.max(1, parseInt(customMines.value)||10); updateFlagCounter(); });
 
-const boardEl=document.getElementById('board'); boardEl.innerHTML=''; boardEl.style.gridTemplateColumns=`repeat(${size},40px)`; board=[];
-minePositions=generateMinesAdjusted();
-for(let r=0;r<size;r++){ board[r]=[]; for(let c=0;c<size;c++){ const cell=document.createElement('div'); cell.className='cell'; cell.dataset.r=r; cell.dataset.c=c;
-cell.onmousedown=(e)=>{ e.preventDefault(); if(e.button===2) toggleFlag(cell); else{ reveal(cell); checkWin(); } };
-cell.oncontextmenu=e=>e.preventDefault(); boardEl.appendChild(cell); board[r][c]=cell; } }
+/* =============
+   Mode toggle (light/dark)
+   ============= */
+const modeToggle = $('modeToggle');
+modeToggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('dark');
+  modeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+});
+
+/* =============
+   Timer
+   ============= */
+function startTimer(){
+  startTime = Date.now() - (elapsed*1000);
+  timerInterval = setInterval(()=>{
+    elapsed = Math.floor((Date.now() - startTime)/1000);
+    $('timer').textContent = `⏱ Time: ${elapsed}s`;
+  }, 250);
+}
+function stopTimer(){
+  clearInterval(timerInterval); timerInterval = null;
 }
 
-function resetGame(){ gameStarted=false; flagsPlaced=0; document.getElementById('preStartText').style.display='block'; document.getElementById('question').style.display='none'; document.getElementById('options').style.display='none'; document.getElementById('winMessage').textContent=''; document.getElementById('message').textContent=''; document.getElementById('startBtn').style.display='inline-block'; document.getElementById('restartBtn').style.display='none'; document.getElementById('quitBtn').style.display='none'; document.getElementById('board').innerHTML=''; document.getElementById('flagCounter').textContent=''; }
+/* =============
+   Board generation
+   ============= */
+function generateMines() {
+  const total = size*size;
+  const positions = [];
+  // simple random placement with "no immediate neighbors" attempt removed for fairness,
+  // keep mines random but ensure count fits
+  while(positions.length < minesCount && positions.length < total) {
+    const p = randInt(total);
+    if(!positions.includes(p)) positions.push(p);
+  }
+  return positions;
+}
 
-function nextQuestion(){ if(questionQueue.length===0){ document.getElementById('question').textContent='All questions completed!'; document.getElementById('options').innerHTML=''; return; } currentQuestion=questionQueue.shift(); document.getElementById('question').textContent=currentQuestion.q; const optionsDiv=document.getElementById('options'); optionsDiv.innerHTML=''; const shuffled=[...currentQuestion.options].sort(()=>Math.random()-0.5); shuffled.forEach(opt=>{ const btn=document.createElement('button'); btn.textContent=opt; btn.className='optionBtn'; btn.onclick=()=>checkAnswer(opt); optionsDiv.appendChild(btn); }); }
+/* =============
+   Rendering board
+   ============= */
+const boardEl = $('board');
+function renderBoard(){
+  boardEl.innerHTML = '';
+  boardEl.style.gridTemplateColumns = `repeat(${size}, 38px)`;
+  board = Array.from({length:size}, ()=>Array(size).fill(null));
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r; cell.dataset.c = c;
+      // events
+      cell.oncontextmenu = (e)=> e.preventDefault();
+      cell.onmousedown = (e)=>{
+        e.preventDefault();
+        if(!gameStarted) { /* do nothing until user starts */ }
+        if(e.button === 2) { // right click
+          toggleFlag(cell);
+        } else if(e.button === 0) { // left
+          reveal(cell);
+          checkWin();
+        }
+      };
+      boardEl.appendChild(cell);
+      board[r][c] = cell;
+    }
+  }
+}
 
-function checkAnswer(ans){ if(ans===currentQuestion.a){ document.getElementById('message').textContent='Correct!'; document.getElementById('message').style.color='green'; revealRandomSafe(); checkWin(); } else{ document.getElementById('message').textContent='Wrong! Correct: '+currentQuestion.a; document.getElementById('message').style.color='red'; } nextQuestion(); }
+/* =============
+   Question selection
+   ============= */
+function pickQuestions(){
+  const copy = [...questionPool];
+  const selected = [];
+  while(selected.length < maxQuestions && copy.length > 0){
+    const i = randInt(copy.length);
+    selected.push(copy.splice(i,1)[0]);
+  }
+  questionQueue = selected;
+}
 
-function revealRandomSafe(){ let safeTiles=[]; for(let r=0;r<size;r++){ for(let c=0;c<size;c++){ if(!isMine(r,c) && !board[r][c].classList.contains('revealed')) safeTiles.push({r,c}); }} if(safeTiles.length===0) return; const pick=safeTiles[Math.floor(Math.random()*safeTiles.length)]; revealCell(pick.r,pick.c); }
+/* =============
+   Question UI
+   ============= */
+function showNextQuestion(){
+  const qEl = $('question');
+  const optsEl = $('options');
+  if(!questionQueue || questionQueue.length === 0){
+    qEl.textContent = 'All questions completed.';
+    optsEl.innerHTML = '';
+    return;
+  }
+  currentQuestion = questionQueue.shift();
+  qEl.style.display = 'block';
+  optsEl.style.display = 'flex';
+  qEl.textContent = currentQuestion.q;
+  optsEl.innerHTML = '';
+  // shuffle options
+  const opts = [...currentQuestion.options].sort(()=>Math.random()-0.5);
+  opts.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'optionBtn';
+    btn.textContent = opt;
+    btn.onclick = ()=> handleAnswer(btn, opt);
+    optsEl.appendChild(btn);
+  });
+}
 
-function toggleFlag(cell){ if(cell.classList.contains('revealed')) return; if(!cell.classList.contains('flag')){ if(flagsPlaced>=minesCount) return; cell.classList.add('flag'); cell.textContent='🚩'; flagsPlaced++; } else{ cell.classList.remove('flag'); cell.textContent=''; flagsPlaced--; } document.getElementById('flagCounter').textContent=`Flags: ${flagsPlaced}/${minesCount}`; }
+function handleAnswer(btn, ans){
+  // disable buttons briefly
+  const btns = Array.from($('options').children);
+  btns.forEach(b=>b.disabled=true);
+  if(ans === currentQuestion.a){
+    btn.classList.add('option-correct');
+    showMessage('Correct!', 'green');
+    revealRandomSafe();
+    checkWin();
+  } else {
+    btn.classList.add('option-wrong');
+    showMessage(`Wrong — correct: ${currentQuestion.a}`, 'red');
+  }
+  setTimeout(()=> {
+    // clear highlights
+    btns.forEach(b=>{ b.disabled=false; b.classList.remove('option-correct','option-wrong'); });
+    showNextQuestion();
+  }, 900);
+}
 
-function isMine(r,c){ return minePositions.includes(r*size+c); }
-function generateMinesAdjusted(){ const positions=[]; while(positions.length<minesCount){ const pos=Math.floor(Math.random()*size*size); const r=Math.floor(pos/size), c=pos%size; let tooClose=false; for(let dr=-1;dr<=1;dr++){ for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc;if(nr>=0 && nr<size && nc>=0 && nc<size && positions.includes(nr*size+nc)) tooClose=true; }} if(!positions.includes(pos) && !tooClose) positions.push(pos); } return positions; }
+/* =============
+   Reveal logic
+   ============= */
+function isMine(r,c){
+  return minePositions.includes(r*size + c);
+}
+function countAdjacentMines(r,c){
+  let ct = 0;
+  for(let dr=-1; dr<=1; dr++){
+    for(let dc=-1; dc<=1; dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0 && nr<size && nc>=0 && nc<size && isMine(nr,nc)) ct++;
+    }
+  }
+  return ct;
+}
 
-function reveal(cell){ const r=parseInt(cell.dataset.r), c=parseInt(cell.dataset.c); if(cell.classList.contains('flag')) return; if(isMine(r,c)){ revealAll(true); document.getElementById('message').textContent='Boom! You hit a mine!'; document.getElementById('message').style.color='red'; return; } revealCell(r,c); }
+function revealCell(r,c){
+  const cell = board[r][c];
+  if(!cell || cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
+  const adj = countAdjacentMines(r,c);
+  cell.classList.add('revealed');
+  if(isMine(r,c)){
+    cell.classList.add('mine');
+    cell.textContent = '💣';
+  } else {
+    if(adj>0){
+      cell.textContent = adj;
+      cell.dataset.count = adj;
+    } else {
+      cell.textContent = '';
+    }
+  }
+  revealedCount++;
+  // auto-reveal neighbors when zero
+  if(!isMine(r,c) && countAdjacentMines(r,c) === 0){
+    for(let dr=-1; dr<=1; dr++){
+      for(let dc=-1; dc<=1; dc++){
+        const nr=r+dr, nc=c+dc;
+        if(nr>=0 && nr<size && nc>=0 && nc<size) revealCell(nr,nc);
+      }
+    }
+  }
+}
 
-function revealCell(r,c){ const cell=board[r][c]; if(cell.classList.contains('revealed')) return; let count=0; for(let dr=-1;dr<=1;dr++){ for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc; if(nr>=0&&nr<size&&nc>=0&&nc<size&&isMine(nr,nc)) count++; }} cell.classList.add('revealed'); if(isMine(r,c)) cell.textContent='💣'; else if(count>0){ cell.textContent=count; cell.dataset.count=count; } else cell.textContent=''; }
+function revealAll(showMines){
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const cell = board[r][c];
+      if(isMine(r,c) && showMines) {
+        cell.classList.add('revealed','mine');
+        cell.textContent = '💣';
+      } else {
+        revealCell(r,c);
+      }
+    }
+  }
+}
 
-function revealAll(showMines){ for(let r=0;r<size;r++){ for(let c=0;c<size;c++){ if(showMines && isMine(r,c)) board[r][c].textContent='💣'; revealCell(r,c); }} }
+/* =============
+   Flag logic (limit flags)
+   ============= */
+function toggleFlag(cell){
+  if(!gameStarted) return;
+  if(cell.classList.contains('revealed')) return;
+  if(!cell.classList.contains('flag')){
+    if(flagsPlaced >= minesCount) { showMessage('No flags left', 'red'); return; }
+    cell.classList.add('flag');
+    cell.textContent = '🚩';
+    flagsPlaced++;
+  } else {
+    cell.classList.remove('flag');
+    cell.textContent = '';
+    flagsPlaced--;
+  }
+  updateFlagCounter();
+}
 
-function checkWin(){ let revealedCount=0; for(let r=0;r<size;r++){ for(let c=0;c<size;c++){ if(!isMine(r,c) && board[r][c].classList.contains('revealed')) revealedCount++; }} if(revealedCount===size*size-minesCount){ document.getElementById('winMessage').textContent="🎉 Congratulations! You cleared the board!"; revealAll(true); } }
+/* =============
+   Random safe reveal after question correct
+   ============= */
+function revealRandomSafe(){
+  const safe = [];
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const cell = board[r][c];
+      if(!isMine(r,c) && !cell.classList.contains('revealed')) safe.push({r,c});
+    }
+  }
+  if(safe.length === 0) return;
+  const pick = safe[randInt(safe.length)];
+  revealCell(pick.r, pick.c);
+}
+
+/* =============
+   Messages
+   ============= */
+function showMessage(text, color){
+  const el = $('message');
+  el.textContent = text;
+  el.style.color = color || 'var(--muted)';
+  setTimeout(()=>{ if(el.textContent === text) el.textContent = ''; }, 2500);
+}
+
+/* =============
+   Win / Lose
+   ============= */
+function onLose(){
+  // animate mines
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      if(isMine(r,c)){
+        const cell = board[r][c];
+        cell.classList.add('revealed','mine','bomb-anim');
+      }
+    }
+  }
+  stopTimer();
+  showMessage('You hit a mine — Game over', 'red');
+  document.getElementById('winMessage').textContent = '';
+  gameStarted = false;
+}
+
+function checkWin(){
+  if(!gameStarted) return;
+  const totalSafe = size*size - minesCount;
+  let revealedSafe = 0;
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const cell = board[r][c];
+      if(!isMine(r,c) && cell.classList.contains('revealed')) revealedSafe++;
+    }
+  }
+  if(revealedSafe >= totalSafe){
+    // win!
+    stopTimer();
+    document.getElementById('winMessage').textContent = `🎉 You cleared the board in ${elapsed}s!`;
+    gameStarted = false;
+    // reveal mines visually
+    revealAll(true);
+    // prompt for name and save to leaderboard
+    setTimeout(()=> {
+      saveScorePrompt(elapsed);
+      refreshLeaderboard();
+    }, 300);
+  }
+}
+
+/* =============
+   Leaderboard (localStorage)
+   ============= */
+function leaderboardKey(){
+  return `pm_leaderboard_${size}x${size}_${minesCount}`;
+}
+function saveScorePrompt(timeSec){
+  const name = prompt(`You won in ${timeSec}s! Enter your name for the leaderboard:`,'Player');
+  if(!name) return;
+  const key = leaderboardKey();
+  const data = JSON.parse(localStorage.getItem(key) || '[]');
+  data.push({name: name.slice(0,24), time: timeSec, date: Date.now()});
+  data.sort((a,b)=>a.time - b.time);
+  localStorage.setItem(key, JSON.stringify(data.slice(0,10)));
+}
+function refreshLeaderboard(){
+  const tbody = $('leaderboardBody');
+  const key = leaderboardKey();
+  const data = JSON.parse(localStorage.getItem(key) || '[]');
+  tbody.innerHTML = '';
+  if(!data.length){ tbody.innerHTML = '<tr><td colspan="2" style="color:var(--muted)">No scores yet</td></tr>'; return; }
+  data.forEach(entry=>{
+    const tr = document.createElement('tr');
+    const nameTd = document.createElement('td'); nameTd.textContent = entry.name;
+    const timeTd = document.createElement('td'); timeTd.textContent = `${entry.time}s`;
+    tr.appendChild(nameTd); tr.appendChild(timeTd);
+    tbody.appendChild(tr);
+  });
+}
+
+/* =============
+   Game start / reset
+   ============= */
+function updateFlagCounter(){ $('flagCounter').textContent = `🚩 Flags: ${flagsPlaced}/${minesCount}`; }
+
+function startNewGame(){
+  // read custom controls if needed
+  if(difficultySelect.value === 'custom'){
+    const sz = parseInt(customSize.value) || 10;
+    const mines = parseInt(customMines.value) || 15;
+    size = Math.max(6, Math.min(20, sz));
+    minesCount = Math.max(1, Math.min(size*size-1, mines));
+  }
+  // reset state
+  renderBoard();
+  minePositions = generateMines();
+  revealedCount = 0;
+  flagsPlaced = 0;
+  updateFlagCounter();
+  pickQuestions();
+  showNextQuestion();
+
+  // UI
+  $('startBtn').style.display='none';
+  $('restartBtn').style.display='inline-block';
+  $('quitBtn').style.display='inline-block';
+  document.getElementById('winMessage').textContent = '';
+  $('message').textContent = '';
+  // reset timer
+  elapsed = 0;
+  $('timer').textContent = `⏱ Time: 0s`;
+  stopTimer();
+  startTimer();
+  gameStarted = true;
+  // initial refresh leaderboard for this difficulty
+  refreshLeaderboard();
+}
+
+$('startBtn').addEventListener('click', startNewGame);
+$('restartBtn').addEventListener('click', ()=> {
+  stopTimer();
+  startNewGame();
+});
+$('quitBtn').addEventListener('click', ()=> {
+  stopTimer();
+  resetToStart();
+});
+
+function resetToStart(){
+  gameStarted=false;
+  stopTimer();
+  $('board').innerHTML = '';
+  $('startBtn').style.display='inline-block';
+  $('restartBtn').style.display='none';
+  $('quitBtn').style.display='none';
+  $('question').style.display='none';
+  $('options').style.display='none';
+  $('preStartText').style.display='block';
+  $('message').textContent = '';
+  $('winMessage').textContent = '';
+  elapsed = 0;
+  $('timer').textContent = '⏱ Time: 0s';
+  flagsPlaced = 0;
+  updateFlagCounter();
+}
+
+/* =============
+   Shuffle questions control
+   ============= */
+$('regenerateQuestions').addEventListener('click', ()=>{
+  questionPool = [...questionPoolMaster].sort(()=>Math.random()-0.5);
+  alert('Question pool reshuffled.');
+});
+
+/* =============
+   Init page
+   ============= */
+function init(){
+  // default difficulty medium
+  size = 9; minesCount = 11;
+  renderBoard();
+  updateFlagCounter();
+  refreshLeaderboard();
+  // hide custom controls until needed
+  customControls.style.display = 'none';
+  // allow clicking anywhere to start timer once (not necessary but helpful)
+  questionPool = [...questionPoolMaster];
+}
+init();
+
+/* =============
+   Safety: reveal on clicking mine triggers lose
+   Overwrite reveal function to handle lose
+   ============= */
+const originalRevealCell = revealCell;
+function reveal(cell){
+  if(!gameStarted) return;
+  const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+  if(cell.classList.contains('flag') || cell.classList.contains('revealed')) return;
+  if(isMine(r,c)){
+    // reveal all mines and animate bombs
+    revealAll(true);
+    onLose();
+  } else {
+    originalRevealCell(r,c);
+  }
+}
+
 </script>
 </body>
 </html>
