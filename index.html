@@ -8,11 +8,20 @@
     font-family: Arial, sans-serif;
     background: linear-gradient(to bottom, #aee1f9, #fefefe);
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;
     min-height: 100vh;
   }
-  h1 { margin-top: 20px; color:#2a4d69; }
+  #container {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+  }
+  #main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { color:#2a4d69; }
   #board { display: grid; gap: 4px; margin-top: 20px; }
   .cell {
     width: 40px; height: 40px; background: #4f81c7;
@@ -31,17 +40,99 @@
     width: 350px; text-align: center;
   }
   .optionBtn { display:block; margin:5px auto; padding:8px 15px; background:#2a4d69; color:white; border:none; border-radius:6px; cursor:pointer; width:80%; }
+  #sidebar {
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  #sidebar h3 { margin-top:0; }
+  #sidebarContent {
+    background:white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    height: auto;
+  }
+  #sidebarContent ul {
+    padding-left: 20px;
+    margin: 0;
+  }
+  #buttonsContainer {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+  button.mainBtn {
+    padding: 12px 20px;
+    font-size: 16px;
+    background:#2a4d69;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  #startBtn {
+    margin-top: 15px;
+    padding: 15px 30px;
+    font-size: 18px;
+    background:#2a4d69;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  #message {
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    min-height: 22px;
+  }
+  #winMessage {
+    margin-top: 15px;
+    color: green;
+    font-weight: bold;
+    font-size: 18px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
-<h1>Probability Minesweeper</h1>
-<div id="questionBox">
-  <div id="preStartText">Please press START to start the game</div>
-  <div id="question" style="display:none;"></div>
-  <div id="options" style="display:none;"></div>
+<div id="container">
+  <div id="main">
+    <h1>Probability Minesweeper</h1>
+    <div id="questionBox">
+      <div id="preStartText">Please press START to start the game</div>
+      <div id="question" style="display:none;"></div>
+      <div id="options" style="display:none;"></div>
+    </div>
+    <button id="startBtn">Start Game</button>
+    <div id="message"></div>
+    <div id="board"></div>
+    <div id="winMessage"></div>
+  </div>
+  <div id="sidebar">
+    <h3>Game Mechanics</h3>
+    <div id="sidebarContent">
+      <ul>
+        <li>Click a cell to reveal it.</li>
+        <li>If you reveal a mine, the game ends.</li>
+        <li>Answer probability questions correctly to reveal safe cells automatically.</li>
+        <li>Right-click a cell to place a flag (🚩) if you suspect a mine (max 11 flags).</li>
+        <li>Reveal all safe cells to win the game!</li>
+        <li>You can answer 10 questions per game.</li>
+      </ul>
+    </div>
+    <div id="buttonsContainer">
+      <button id="restartBtn" class="mainBtn" style="display:none;">Restart</button>
+      <button id="quitBtn" class="mainBtn" style="display:none;">Quit</button>
+    </div>
+  </div>
 </div>
-<button id="startBtn" style="margin-top:15px;">Start Game</button>
-<div id="board"></div>
 
 <script>
 const size = 9;
@@ -51,26 +142,67 @@ let board = [];
 let minePositions = [];
 let currentQuestion = null;
 let questionQueue = [];
+let gameStarted = false;
+let flagsPlaced = 0;
 
-// 50 unique and descriptive easy questions with varied correct answers
 const questionPool = [
-  { q:"You flip a fair coin once. What is the probability of getting heads?", options:["0.25","0.5","0.75","1"], a:"0.5" },
-  { q:"You roll a standard six-sided die. What is the probability of rolling a 3?", options:["1/6","1/3","1/2","1/4"], a:"1/6" },
-  { q:"A bag contains 3 red and 2 blue balls. Pick one at random. Probability it is blue?", options:["2/5","3/5","1/2","1/3"], a:"2/5" },
-  { q:"Flip two coins. Probability both show tails?", options:["1/4","1/2","1/3","1/6"], a:"1/4" },
-  { q:"Draw one card from a deck of 52. Probability it is an Ace?", options:["1/52","1/13","1/4","1/12"], a:"1/13" },
-  { q:"Roll a die. Probability of rolling an even number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"A bag has 5 green and 5 yellow balls. Probability of picking a green?", options:["1/2","1/3","1/5","2/5"], a:"1/2" },
-  { q:"Flip a coin once. Probability of getting tails?", options:["0.25","0.5","0.75","1"], a:"0.5" },
-  { q:"Draw one card from a deck. Probability it is a heart?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
-  { q:"Draw one card. Probability it is red?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Pick a day randomly. Probability it is Sunday?", options:["1/7","1/6","1/5","1/8"], a:"1/7" },
-  { q:"Pick a King from a deck of 52 cards. Probability?", options:["1/52","1/13","1/4","1/12"], a:"1/13" },
-  { q:"Roll a die. Probability of number less than 4?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
+  { q:"You flip a fair coin once. Probability of heads?", options:["0.25","0.5","0.75","1"], a:"0.5" },
+  { q:"You flip a fair coin once. Probability of tails?", options:["0.25","0.5","0.75","1"], a:"0.5" },
+  { q:"Flip two coins. Probability both heads?", options:["1/4","1/2","1/3","1/6"], a:"1/4" },
   { q:"Flip two coins. Probability one head and one tail?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
-  { q:"Bag has 3 red, 2 blue, 5 green. Pick red?", options:["3/10","1/2","2/5","1/3"], a:"3/10" },
-  // ... add remaining questions up to 50 with varied correct answers
+  { q:"Roll a die. Probability of 3?", options:["1/6","1/3","1/2","1/4"], a:"1/6" },
+  { q:"Roll a die. Probability of even number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
+  { q:"Roll a die. Probability of number < 4?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
+  { q:"Roll two dice. Probability sum is 7?", options:["1/6","1/8","1/12","1/36"], a:"1/6" },
+  { q:"Draw a card. Probability it is red?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
+  { q:"Draw a card. Probability it is black?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
+  { q:"Draw a card. Probability it is a heart?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
+  { q:"Draw a card. Probability it is a spade?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
+  { q:"Draw a card. Probability it is a king?", options:["1/13","1/4","1/52","1/12"], a:"1/13" },
+  { q:"Draw a card. Probability it is a queen?", options:["1/13","1/4","1/52","1/12"], a:"1/13" },
+  { q:"Pick a day randomly. Probability it is Monday?", options:["1/7","1/6","1/5","1/8"], a:"1/7" },
+  { q:"Pick a day randomly. Probability it is Sunday?", options:["1/7","1/6","1/5","1/8"], a:"1/7" },
+  { q:"Bag with 3 red, 2 blue balls. Pick blue?", options:["2/5","3/5","1/2","1/3"], a:"2/5" },
+  { q:"Bag with 3 red, 2 blue balls. Pick red?", options:["3/5","2/5","1/2","1/3"], a:"3/5" },
+  { q:"Bag with 5 green, 5 yellow balls. Pick green?", options:["1/2","1/3","1/5","2/5"], a:"1/2" },
+  { q:"Bag with 5 green, 5 yellow balls. Pick yellow?", options:["1/2","1/3","1/5","2/5"], a:"1/2" },
+  { q:"Bag with 3 red, 3 blue, 4 green. Pick green?", options:["4/10","3/10","1/2","1/3"], a:"4/10" },
+  { q:"Bag with 3 red, 3 blue, 4 green. Pick red?", options:["3/10","4/10","1/2","1/3"], a:"3/10" },
+  { q:"Bag with 3 red, 3 blue, 4 green. Pick blue?", options:["3/10","4/10","1/2","1/3"], a:"3/10" },
+  { q:"Flip three coins. Probability all heads?", options:["1/8","1/6","1/4","1/2"], a:"1/8" },
+  { q:"Flip three coins. Probability exactly two heads?", options:["3/8","1/4","1/2","1/6"], a:"3/8" },
+  { q:"Flip three coins. Probability exactly one tail?", options:["3/8","1/4","1/2","1/6"], a:"3/8" },
+  { q:"Draw one card. Probability not an ace?", options:["48/52","1/13","1/4","1/12"], a:"48/52" },
+  { q:"Draw one card. Probability not red?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
+  { q:"Roll a die twice. Probability both dice 6?", options:["1/36","1/6","1/12","1/18"], a:"1/36" },
+  { q:"Roll a die twice. Probability at least one 6?", options:["11/36","1/6","1/2","5/6"], a:"11/36" },
+  { q:"Flip a coin 4 times. Probability all tails?", options:["1/16","1/8","1/4","1/2"], a:"1/16" },
+  { q:"Flip a coin 4 times. Probability exactly two heads?", options:["3/8","1/4","1/2","1/16"], a:"3/8" },
+  { q:"Pick a number 1-10. Probability even?", options:["1/2","1/3","1/5","1/10"], a:"1/2" },
+  { q:"Pick a number 1-10. Probability divisible by 5?", options:["1/5","1/2","1/10","1/3"], a:"1/5" },
+  { q:"Pick a number 1-6. Probability not 6?", options:["5/6","1/6","1/3","1/2"], a:"5/6" },
+  { q:"Pick a number 1-6. Probability greater than 4?", options:["1/3","1/2","1/6","1/4"], a:"1/3" },
+  { q:"Roll a die. Probability number ≤ 4?", options:["2/3","1/2","1/4","1/6"], a:"2/3" },
+  { q:"Roll a die. Probability number > 4?", options:["1/3","1/2","1/4","1/6"], a:"1/3" },
+  { q:"Bag with 2 red, 3 blue, 5 green. Pick red?", options:["2/10","1/2","3/10","1/3"], a:"2/10" },
+  { q:"Bag with 2 red, 3 blue, 5 green. Pick blue?", options:["3/10","2/10","1/2","1/3"], a:"3/10" },
+  { q:"Bag with 2 red, 3 blue, 5 green. Pick green?", options:["5/10","1/2","3/10","2/10"], a:"5/10" },
+  { q:"Flip two coins. Probability at least one head?", options:["3/4","1/2","1/4","1/3"], a:"3/4" },
+  { q:"Flip three coins. Probability at least one tail?", options:["7/8","1/2","1/4","3/8"], a:"7/8" },
+  { q:"Draw two cards. Probability both aces?", options:["1/221","1/169","1/52","1/13"], a:"1/221" },
+  { q:"Draw two cards. Probability first red, second black?", options:["1/2","1/4","1/3","1/6"], a:"1/2" },
+  { q:"Roll a die. Probability prime number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
+  { q:"Roll a die. Probability composite number?", options:["1/2","1/3","1/4","1/6"], a:"1/2" },
+  { q:"Pick a month randomly. Probability December?", options:["1/12","1/6","1/11","1/10"], a:"1/12" },
+  { q:"Pick a month randomly. Probability in first quarter?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
+  { q:"Pick a month randomly. Probability in last quarter?", options:["1/4","1/3","1/2","1/6"], a:"1/4" },
+  { q:"Flip a coin 3 times. Probability all same?", options:["1/4","1/2","1/3","1/8"], a:"1/4" }
 ];
+
+
+document.getElementById('startBtn').onclick = () => startGame();
+document.getElementById('restartBtn').onclick = () => startGame();
+document.getElementById('quitBtn').onclick = () => resetGame();
 
 function pickQuestions(){
   const copy = [...questionPool];
@@ -82,90 +214,111 @@ function pickQuestions(){
   questionQueue = selected;
 }
 
-document.getElementById('startBtn').onclick = () => {
-  document.getElementById('preStartText').style.display = 'none';
-  document.getElementById('question').style.display = 'block';
-  document.getElementById('options').style.display = 'block';
-  startGame();
-};
-
 function startGame() {
   pickQuestions();
   nextQuestion();
-  const boardEl = document.getElementById('board');
-  boardEl.innerHTML = '';
-  boardEl.style.gridTemplateColumns = `repeat(${size}, 40px)`;
+  gameStarted = true;
+  flagsPlaced = 0;
+  document.getElementById('preStartText').style.display='none';
+  document.getElementById('question').style.display='block';
+  document.getElementById('options').style.display='block';
+  document.getElementById('winMessage').textContent='';
+  document.getElementById('message').textContent='';
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('restartBtn').style.display='inline-block';
+  document.getElementById('quitBtn').style.display='inline-block';
 
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML='';
+  boardEl.style.gridTemplateColumns = `repeat(${size}, 40px)`;
   board = [];
   minePositions = generateMinesAdjusted();
 
-  for (let r = 0; r < size; r++) {
-    board[r] = [];
-    for (let c = 0; c < size; c++) {
+  for(let r=0;r<size;r++){
+    board[r]=[];
+    for(let c=0;c<size;c++){
       const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.r = r;
-      cell.dataset.c = c;
-      cell.onmousedown = (e) => {
+      cell.className='cell';
+      cell.dataset.r=r;
+      cell.dataset.c=c;
+      cell.onmousedown = (e)=>{
         e.preventDefault();
-        if(e.button === 2){
-          toggleFlag(cell);
-        } else {
+        if(e.button===2) toggleFlag(cell);
+        else {
           reveal(cell);
+          checkWin();
         }
       };
       cell.oncontextmenu = (e)=> e.preventDefault();
       boardEl.appendChild(cell);
-      board[r][c] = cell;
+      board[r][c]=cell;
     }
   }
 }
 
+function resetGame(){
+  gameStarted=false;
+  flagsPlaced=0;
+  document.getElementById('preStartText').style.display='block';
+  document.getElementById('question').style.display='none';
+  document.getElementById('options').style.display='none';
+  document.getElementById('winMessage').textContent='';
+  document.getElementById('message').textContent='';
+  document.getElementById('startBtn').style.display='inline-block';
+  document.getElementById('restartBtn').style.display='none';
+  document.getElementById('quitBtn').style.display='none';
+  document.getElementById('board').innerHTML='';
+}
+
 function nextQuestion(){
-  if(questionQueue.length === 0){
-    document.getElementById('question').textContent = 'All questions completed!';
-    document.getElementById('options').innerHTML = '';
+  if(questionQueue.length===0){
+    document.getElementById('question').textContent='All questions completed!';
+    document.getElementById('options').innerHTML='';
     return;
   }
-  currentQuestion = questionQueue.shift();
-  document.getElementById('question').textContent = currentQuestion.q;
-  const optionsDiv = document.getElementById('options');
-  optionsDiv.innerHTML = '';
-  const shuffledOptions = [...currentQuestion.options].sort(() => Math.random() - 0.5);
-  shuffledOptions.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.textContent = opt;
-    btn.className = 'optionBtn';
-    btn.onclick = () => checkAnswer(opt);
+  currentQuestion=questionQueue.shift();
+  document.getElementById('question').textContent=currentQuestion.q;
+  const optionsDiv=document.getElementById('options');
+  optionsDiv.innerHTML='';
+  const shuffledOptions=[...currentQuestion.options].sort(()=>Math.random()-0.5);
+  shuffledOptions.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.textContent=opt;
+    btn.className='optionBtn';
+    btn.onclick=()=>checkAnswer(opt);
     optionsDiv.appendChild(btn);
   });
 }
 
 function checkAnswer(ans){
-  if(ans === currentQuestion.a){
+  if(ans===currentQuestion.a){
+    document.getElementById('message').textContent='Correct!';
+    document.getElementById('message').style.color='green';
     revealRandomSafe();
+    checkWin();
   } else {
-    alert('Wrong! The correct answer was: '+currentQuestion.a);
+    document.getElementById('message').textContent='Wrong! Correct: '+currentQuestion.a;
+    document.getElementById('message').style.color='red';
   }
   nextQuestion();
 }
 
 function revealRandomSafe(){
-  let safeTiles = [];
+  let safeTiles=[];
   for(let r=0;r<size;r++){
     for(let c=0;c<size;c++){
       if(!isMine(r,c) && !board[r][c].classList.contains('revealed')) safeTiles.push({r,c});
     }
   }
   if(safeTiles.length===0) return;
-  const pick = safeTiles[Math.floor(Math.random()*safeTiles.length)];
+  const pick=safeTiles[Math.floor(Math.random()*safeTiles.length)];
   revealCell(pick.r,pick.c);
 }
 
 function revealAll(showMines){
   for(let r=0;r<size;r++){
     for(let c=0;c<size;c++){
-      if(showMines && isMine(r,c)) board[r][c].textContent = '💣';
+      if(showMines && isMine(r,c)) board[r][c].textContent='💣';
       revealCell(r,c);
     }
   }
@@ -173,26 +326,31 @@ function revealAll(showMines){
 
 function toggleFlag(cell){
   if(cell.classList.contains('revealed')) return;
-  cell.classList.toggle('flag');
-  cell.textContent = cell.classList.contains('flag') ? '🚩' : '';
+  if(!cell.classList.contains('flag')){
+    if(flagsPlaced>=minesCount) return; // limit flags
+    cell.classList.add('flag');
+    cell.textContent='🚩';
+    flagsPlaced++;
+  } else {
+    cell.classList.remove('flag');
+    cell.textContent='';
+    flagsPlaced--;
+  }
 }
 
-function isMine(r, c) {
-  return minePositions.includes(r * size + c);
-}
+function isMine(r,c){ return minePositions.includes(r*size+c); }
 
 function generateMinesAdjusted(){
-  const positions = [];
-  while (positions.length < minesCount) {
-    const pos = Math.floor(Math.random() * size * size);
-    const r = Math.floor(pos / size);
-    const c = pos % size;
-    let tooClose = false;
-    for(let dr=-1; dr<=1; dr++){
-      for(let dc=-1; dc<=1; dc++){
-        const nr = r+dr, nc=c+dc;
+  const positions=[];
+  while(positions.length<minesCount){
+    const pos=Math.floor(Math.random()*size*size);
+    const r=Math.floor(pos/size), c=pos%size;
+    let tooClose=false;
+    for(let dr=-1;dr<=1;dr++){
+      for(let dc=-1;dc<=1;dc++){
+        const nr=r+dr,nc=c+dc;
         if(nr>=0 && nr<size && nc>=0 && nc<size){
-          if(positions.includes(nr*size+nc)) tooClose = true;
+          if(positions.includes(nr*size+nc)) tooClose=true;
         }
       }
     }
@@ -201,36 +359,46 @@ function generateMinesAdjusted(){
   return positions;
 }
 
-function reveal(cell) {
-  const r = parseInt(cell.dataset.r);
-  const c = parseInt(cell.dataset.c);
+function reveal(cell){
+  const r=parseInt(cell.dataset.r);
+  const c=parseInt(cell.dataset.c);
   if(cell.classList.contains('flag')) return;
-
-  if (isMine(r, c)) {
+  if(isMine(r,c)){
     revealAll(true);
-    alert('Boom! You hit a mine! Game over.');
+    document.getElementById('message').textContent='Boom! You hit a mine!';
+    document.getElementById('message').style.color='red';
     return;
   }
-
-  revealCell(r, c);
+  revealCell(r,c);
 }
 
-function revealCell(r, c) {
-  const cell = board[r][c];
-  if (cell.classList.contains('revealed')) return;
-
-  let count = 0;
-  for (let dr=-1; dr<=1; dr++){
-    for(let dc=-1; dc<=1; dc++){
-      const nr = r+dr, nc=c+dc;
+function revealCell(r,c){
+  const cell=board[r][c];
+  if(cell.classList.contains('revealed')) return;
+  let count=0;
+  for(let dr=-1;dr<=1;dr++){
+    for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr,nc=c+dc;
       if(nr>=0 && nr<size && nc>=0 && nc<size && isMine(nr,nc)) count++;
     }
   }
-
   cell.classList.add('revealed');
-  if(isMine(r,c)) cell.textContent = '💣';
-  else if(count>0) cell.textContent = count;
-  else cell.textContent = '';
+  if(isMine(r,c)) cell.textContent='💣';
+  else if(count>0) cell.textContent=count;
+  else cell.textContent='';
+}
+
+function checkWin(){
+  let revealedCount=0;
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      if(!isMine(r,c) && board[r][c].classList.contains('revealed')) revealedCount++;
+    }
+  }
+  if(revealedCount===size*size-minesCount){
+    document.getElementById('winMessage').textContent="🎉 Congratulations! You cleared the board!";
+    revealAll(true);
+  }
 }
 </script>
 </body>
