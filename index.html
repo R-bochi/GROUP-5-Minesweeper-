@@ -1,149 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Probability Minesweeper</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(to bottom, #aee1f9, #fefefe);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-  }
-  #container {
-    display: flex;
-    gap: 30px;
-    margin-top: 20px;
-  }
-  #main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  h1 { color:#2a4d69; }
-  #board { display: grid; gap: 4px; margin-top: 20px; }
-  .cell {
-    width: 40px; height: 40px; background: #4f81c7;
-    display: flex; justify-content: center; align-items: center;
-    cursor: pointer; font-weight: bold; border-radius: 6px;
-    user-select: none; color: white; font-size: 18px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  .revealed { background:#d9edf7; color:#2a4d69; }
-  .mine { background:#e74c3c !important; color:white; }
-  .flag { background:#f1c40f !important; color:white; }
-  #questionBox {
-    margin-top: 20px; padding: 10px 20px;
-    background: white; border-radius: 10px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.2);
-    width: 350px; text-align: center;
-  }
-  .optionBtn { display:block; margin:5px auto; padding:8px 15px; background:#2a4d69; color:white; border:none; border-radius:6px; cursor:pointer; width:80%; }
-  #sidebar {
-    width: 250px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    font-size: 14px;
-    line-height: 1.4;
-  }
-  #sidebar h3 { margin-top:0; }
-  #sidebarContent {
-    background:white;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.2);
-    height: auto;
-  }
-  #sidebarContent ul {
-    padding-left: 20px;
-    margin: 0;
-  }
-  #buttonsContainer {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-start;
-  }
-  button.mainBtn {
-    padding: 12px 20px;
-    font-size: 16px;
-    background:#2a4d69;
-    color:white;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-  }
-  #startBtn {
-    margin-top: 15px;
-    padding: 15px 30px;
-    font-size: 18px;
-    background:#2a4d69;
-    color:white;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-  }
-  #message {
-    margin-top: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-    min-height: 22px;
-  }
-  #winMessage {
-    margin-top: 15px;
-    color: green;
-    font-weight: bold;
-    font-size: 18px;
-    text-align: center;
-  }
+/* Animated background */
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #89f7fe, #66a6ff, #ff9a9e, #fad0c4);
+  background-size: 400% 400%;
+  animation: gradientAnim 20s ease infinite;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+}
+@keyframes gradientAnim {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+#container { display: flex; gap:30px; margin-top:20px; }
+/* Main game area */
+#main { display:flex; flex-direction:column; align-items:center; }
+h1 { color:#2a4d69; text-shadow:1px 1px 3px rgba(0,0,0,0.3); }
+
+/* Board */
+#board { display:grid; grid-gap:6px; margin-top:20px; }
+.cell {
+  width:40px; height:40px;
+  background: linear-gradient(145deg,#4f81c7,#2a64a0);
+  display:flex; justify-content:center; align-items:center;
+  cursor:pointer; font-weight:bold; border-radius:10px;
+  user-select:none; color:white; font-size:18px;
+  box-shadow: 3px 3px 6px rgba(0,0,0,0.3), inset 0 0 5px rgba(255,255,255,0.2);
+  backface-visibility: hidden;
+}
+
+/* Hover effect without scaling to prevent blur */
+.cell:hover {
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.3);
+}
+
+.revealed {
+  background: linear-gradient(145deg,#d9f7ff,#a7d4ed);
+  color:#2a4d69;
+  box-shadow: inset 2px 2px 6px rgba(0,0,0,0.2), 0 0 6px rgba(255,255,255,0.4);
+}
+.cell.revealed[data-count] { text-shadow:0 0 3px rgba(0,0,0,0.5); }
+
+/* Mines & Flags */
+.mine {
+  background: radial-gradient(circle,#e74c3c 40%,#c0392b 100%);
+  color:white; box-shadow:0 0 12px rgba(231,76,60,0.8);
+}
+.flag {
+  background: radial-gradient(circle,#f1c40f 40%,#d4ac0d 100%);
+  color:white; box-shadow:0 0 10px rgba(241,196,15,0.8);
+}
+
+/* Number colors */
+.cell.revealed[data-count="1"]{color:#0000FF;}
+.cell.revealed[data-count="2"]{color:#008000;}
+.cell.revealed[data-count="3"]{color:#FF0000;}
+.cell.revealed[data-count="4"]{color:#800080;}
+.cell.revealed[data-count="5"]{color:#A52A2A;}
+.cell.revealed[data-count="6"]{color:#008080;}
+.cell.revealed[data-count="7"]{color:#000000;}
+.cell.revealed[data-count="8"]{color:#808080;}
+
+/* Question box */
+#questionBox{
+  margin-top:20px; padding:15px 20px;
+  background: linear-gradient(145deg,#ffffff,#cce8ff);
+  border-radius:20px;
+  box-shadow:0 6px 12px rgba(0,0,0,0.25);
+  width:350px; text-align:center;
+  transition: transform 0.2s ease-in-out;
+}
+#questionBox:hover{ transform: scale(1.02); }
+
+.optionBtn{ display:block; margin:5px auto; padding:8px 15px; background:#2a4d69; color:white; border:none; border-radius:8px; cursor:pointer; width:80%; transition: all 0.2s;}
+.optionBtn:hover{ box-shadow: 0 0 8px rgba(255,255,255,0.4); }
+
+/* Sidebar */
+#sidebar{ width:260px; font-size:14px; line-height:1.5; }
+#sidebarContent{
+  background: linear-gradient(145deg,#ffffff,#d0f0ff);
+  padding:12px; border-radius:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.25);
+}
+#buttonsContainer button{
+  background: linear-gradient(145deg,#2a4d69,#1e3952);
+  color:white; border-radius:10px; padding:10px 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+  transition: all 0.2s; cursor:pointer; margin-top:10px;
+}
+#buttonsContainer button:hover{ box-shadow: 0 0 12px rgba(255,255,255,0.5); }
+
+/* Main buttons & messages */
+#startBtn{ margin-top:15px; padding:15px 30px; font-size:18px; background:#2a4d69; color:white; border:none; border-radius:10px; cursor:pointer; transition: all 0.2s;}
+#startBtn:hover{ box-shadow:0 0 10px rgba(255,255,255,0.5); }
+
+#message{ font-size:16px; font-weight:bold; min-height:22px; margin-top:10px; }
+#winMessage{ font-size:20px; font-weight:bold; color:#27ae60; text-align:center; margin-top:10px; }
+#flagCounter{ font-weight:bold; margin-top:10px; color:#1e3c72; }
 </style>
 </head>
 <body>
 <div id="container">
-  <div id="main">
-    <h1>Probability Minesweeper</h1>
-    <div id="questionBox">
-      <div id="preStartText">Please press START to start the game</div>
-      <div id="question" style="display:none;"></div>
-      <div id="options" style="display:none;"></div>
-    </div>
-    <button id="startBtn">Start Game</button>
-    <div id="message"></div>
-    <div id="board"></div>
-    <div id="winMessage"></div>
-  </div>
-  <div id="sidebar">
-    <h3>Game Mechanics</h3>
-    <div id="sidebarContent">
-      <ul>
-        <li>Click a cell to reveal it.</li>
-        <li>If you reveal a mine, the game ends.</li>
-        <li>Answer probability questions correctly to reveal safe cells automatically.</li>
-        <li>Right-click a cell to place a flag (🚩) if you suspect a mine (max 11 flags).</li>
-        <li>Reveal all safe cells to win the game!</li>
-        <li>You can answer 10 questions per game.</li>
-      </ul>
-    </div>
-    <div id="buttonsContainer">
-      <button id="restartBtn" class="mainBtn" style="display:none;">Restart</button>
-      <button id="quitBtn" class="mainBtn" style="display:none;">Quit</button>
-    </div>
-  </div>
+<div id="main">
+<h1>Probability Minesweeper</h1>
+<div id="questionBox">
+  <div id="preStartText">Please press START to start the game</div>
+  <div id="question" style="display:none;"></div>
+  <div id="options" style="display:none;"></div>
+</div>
+<button id="startBtn">Start Game</button>
+<div id="message"></div>
+<div id="flagCounter"></div>
+<div id="board"></div>
+<div id="winMessage"></div>
+</div>
+<div id="sidebar">
+<h3>Game Mechanics</h3>
+<div id="sidebarContent">
+<ul>
+<li>Click a cell to reveal it.</li>
+<li>Answer probability questions correctly to reveal safe cells.</li>
+<li>Right-click a cell to place a flag (max 11).</li>
+<li>Reveal all safe cells to win.</li>
+<li>10 questions per game.</li>
+</ul>
+</div>
+<div id="buttonsContainer">
+<button id="restartBtn" style="display:none;">Restart</button>
+<button id="quitBtn" style="display:none;">Quit</button>
+</div>
+</div>
 </div>
 
 <script>
-const size = 9;
-const minesCount = 11;
-const maxQuestions = 10;
-let board = [];
-let minePositions = [];
-let currentQuestion = null;
-let questionQueue = [];
-let gameStarted = false;
-let flagsPlaced = 0;
+const size=9,minesCount=11,maxQuestions=10;
+let board=[],minePositions=[],currentQuestion=null,questionQueue=[],gameStarted=false,flagsPlaced=0;
 
 const questionPool = [
   { q:"You flip a fair coin once. Probability of heads?", options:["0.25","0.5","0.75","1"], a:"0.5" },
@@ -200,206 +200,50 @@ const questionPool = [
 ];
 
 
-document.getElementById('startBtn').onclick = () => startGame();
-document.getElementById('restartBtn').onclick = () => startGame();
-document.getElementById('quitBtn').onclick = () => resetGame();
+document.getElementById('startBtn').onclick=startGame;
+document.getElementById('restartBtn').onclick=startGame;
+document.getElementById('quitBtn').onclick=resetGame;
 
-function pickQuestions(){
-  const copy = [...questionPool];
-  const selected = [];
-  while(selected.length<maxQuestions && copy.length>0){
-    const idx = Math.floor(Math.random()*copy.length);
-    selected.push(copy.splice(idx,1)[0]);
-  }
-  questionQueue = selected;
+function pickQuestions(){ const copy=[...questionPool],selected=[]; while(selected.length<maxQuestions && copy.length>0){ const idx=Math.floor(Math.random()*copy.length); selected.push(copy.splice(idx,1)[0]); } questionQueue=selected; }
+
+function startGame(){ pickQuestions(); nextQuestion(); gameStarted=true; flagsPlaced=0;
+document.getElementById('preStartText').style.display='none';
+document.getElementById('question').style.display='block';
+document.getElementById('options').style.display='block';
+document.getElementById('winMessage').textContent='';
+document.getElementById('message').textContent='';
+document.getElementById('startBtn').style.display='none';
+document.getElementById('restartBtn').style.display='inline-block';
+document.getElementById('quitBtn').style.display='inline-block';
+document.getElementById('flagCounter').textContent=`Flags: ${flagsPlaced}/${minesCount}`;
+
+const boardEl=document.getElementById('board'); boardEl.innerHTML=''; boardEl.style.gridTemplateColumns=`repeat(${size},40px)`; board=[];
+minePositions=generateMinesAdjusted();
+for(let r=0;r<size;r++){ board[r]=[]; for(let c=0;c<size;c++){ const cell=document.createElement('div'); cell.className='cell'; cell.dataset.r=r; cell.dataset.c=c;
+cell.onmousedown=(e)=>{ e.preventDefault(); if(e.button===2) toggleFlag(cell); else{ reveal(cell); checkWin(); } };
+cell.oncontextmenu=e=>e.preventDefault(); boardEl.appendChild(cell); board[r][c]=cell; } }
 }
 
-function startGame() {
-  pickQuestions();
-  nextQuestion();
-  gameStarted = true;
-  flagsPlaced = 0;
-  document.getElementById('preStartText').style.display='none';
-  document.getElementById('question').style.display='block';
-  document.getElementById('options').style.display='block';
-  document.getElementById('winMessage').textContent='';
-  document.getElementById('message').textContent='';
-  document.getElementById('startBtn').style.display='none';
-  document.getElementById('restartBtn').style.display='inline-block';
-  document.getElementById('quitBtn').style.display='inline-block';
+function resetGame(){ gameStarted=false; flagsPlaced=0; document.getElementById('preStartText').style.display='block'; document.getElementById('question').style.display='none'; document.getElementById('options').style.display='none'; document.getElementById('winMessage').textContent=''; document.getElementById('message').textContent=''; document.getElementById('startBtn').style.display='inline-block'; document.getElementById('restartBtn').style.display='none'; document.getElementById('quitBtn').style.display='none'; document.getElementById('board').innerHTML=''; document.getElementById('flagCounter').textContent=''; }
 
-  const boardEl = document.getElementById('board');
-  boardEl.innerHTML='';
-  boardEl.style.gridTemplateColumns = `repeat(${size}, 40px)`;
-  board = [];
-  minePositions = generateMinesAdjusted();
+function nextQuestion(){ if(questionQueue.length===0){ document.getElementById('question').textContent='All questions completed!'; document.getElementById('options').innerHTML=''; return; } currentQuestion=questionQueue.shift(); document.getElementById('question').textContent=currentQuestion.q; const optionsDiv=document.getElementById('options'); optionsDiv.innerHTML=''; const shuffled=[...currentQuestion.options].sort(()=>Math.random()-0.5); shuffled.forEach(opt=>{ const btn=document.createElement('button'); btn.textContent=opt; btn.className='optionBtn'; btn.onclick=()=>checkAnswer(opt); optionsDiv.appendChild(btn); }); }
 
-  for(let r=0;r<size;r++){
-    board[r]=[];
-    for(let c=0;c<size;c++){
-      const cell = document.createElement('div');
-      cell.className='cell';
-      cell.dataset.r=r;
-      cell.dataset.c=c;
-      cell.onmousedown = (e)=>{
-        e.preventDefault();
-        if(e.button===2) toggleFlag(cell);
-        else {
-          reveal(cell);
-          checkWin();
-        }
-      };
-      cell.oncontextmenu = (e)=> e.preventDefault();
-      boardEl.appendChild(cell);
-      board[r][c]=cell;
-    }
-  }
-}
+function checkAnswer(ans){ if(ans===currentQuestion.a){ document.getElementById('message').textContent='Correct!'; document.getElementById('message').style.color='green'; revealRandomSafe(); checkWin(); } else{ document.getElementById('message').textContent='Wrong! Correct: '+currentQuestion.a; document.getElementById('message').style.color='red'; } nextQuestion(); }
 
-function resetGame(){
-  gameStarted=false;
-  flagsPlaced=0;
-  document.getElementById('preStartText').style.display='block';
-  document.getElementById('question').style.display='none';
-  document.getElementById('options').style.display='none';
-  document.getElementById('winMessage').textContent='';
-  document.getElementById('message').textContent='';
-  document.getElementById('startBtn').style.display='inline-block';
-  document.getElementById('restartBtn').style.display='none';
-  document.getElementById('quitBtn').style.display='none';
-  document.getElementById('board').innerHTML='';
-}
+function revealRandomSafe(){ let safeTiles=[]; for(let r=0;r<size;r++){ for(let c=0;c<size;c++){ if(!isMine(r,c) && !board[r][c].classList.contains('revealed')) safeTiles.push({r,c}); }} if(safeTiles.length===0) return; const pick=safeTiles[Math.floor(Math.random()*safeTiles.length)]; revealCell(pick.r,pick.c); }
 
-function nextQuestion(){
-  if(questionQueue.length===0){
-    document.getElementById('question').textContent='All questions completed!';
-    document.getElementById('options').innerHTML='';
-    return;
-  }
-  currentQuestion=questionQueue.shift();
-  document.getElementById('question').textContent=currentQuestion.q;
-  const optionsDiv=document.getElementById('options');
-  optionsDiv.innerHTML='';
-  const shuffledOptions=[...currentQuestion.options].sort(()=>Math.random()-0.5);
-  shuffledOptions.forEach(opt=>{
-    const btn=document.createElement('button');
-    btn.textContent=opt;
-    btn.className='optionBtn';
-    btn.onclick=()=>checkAnswer(opt);
-    optionsDiv.appendChild(btn);
-  });
-}
-
-function checkAnswer(ans){
-  if(ans===currentQuestion.a){
-    document.getElementById('message').textContent='Correct!';
-    document.getElementById('message').style.color='green';
-    revealRandomSafe();
-    checkWin();
-  } else {
-    document.getElementById('message').textContent='Wrong! Correct: '+currentQuestion.a;
-    document.getElementById('message').style.color='red';
-  }
-  nextQuestion();
-}
-
-function revealRandomSafe(){
-  let safeTiles=[];
-  for(let r=0;r<size;r++){
-    for(let c=0;c<size;c++){
-      if(!isMine(r,c) && !board[r][c].classList.contains('revealed')) safeTiles.push({r,c});
-    }
-  }
-  if(safeTiles.length===0) return;
-  const pick=safeTiles[Math.floor(Math.random()*safeTiles.length)];
-  revealCell(pick.r,pick.c);
-}
-
-function revealAll(showMines){
-  for(let r=0;r<size;r++){
-    for(let c=0;c<size;c++){
-      if(showMines && isMine(r,c)) board[r][c].textContent='💣';
-      revealCell(r,c);
-    }
-  }
-}
-
-function toggleFlag(cell){
-  if(cell.classList.contains('revealed')) return;
-  if(!cell.classList.contains('flag')){
-    if(flagsPlaced>=minesCount) return; // limit flags
-    cell.classList.add('flag');
-    cell.textContent='🚩';
-    flagsPlaced++;
-  } else {
-    cell.classList.remove('flag');
-    cell.textContent='';
-    flagsPlaced--;
-  }
-}
+function toggleFlag(cell){ if(cell.classList.contains('revealed')) return; if(!cell.classList.contains('flag')){ if(flagsPlaced>=minesCount) return; cell.classList.add('flag'); cell.textContent='🚩'; flagsPlaced++; } else{ cell.classList.remove('flag'); cell.textContent=''; flagsPlaced--; } document.getElementById('flagCounter').textContent=`Flags: ${flagsPlaced}/${minesCount}`; }
 
 function isMine(r,c){ return minePositions.includes(r*size+c); }
+function generateMinesAdjusted(){ const positions=[]; while(positions.length<minesCount){ const pos=Math.floor(Math.random()*size*size); const r=Math.floor(pos/size), c=pos%size; let tooClose=false; for(let dr=-1;dr<=1;dr++){ for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc;if(nr>=0 && nr<size && nc>=0 && nc<size && positions.includes(nr*size+nc)) tooClose=true; }} if(!positions.includes(pos) && !tooClose) positions.push(pos); } return positions; }
 
-function generateMinesAdjusted(){
-  const positions=[];
-  while(positions.length<minesCount){
-    const pos=Math.floor(Math.random()*size*size);
-    const r=Math.floor(pos/size), c=pos%size;
-    let tooClose=false;
-    for(let dr=-1;dr<=1;dr++){
-      for(let dc=-1;dc<=1;dc++){
-        const nr=r+dr,nc=c+dc;
-        if(nr>=0 && nr<size && nc>=0 && nc<size){
-          if(positions.includes(nr*size+nc)) tooClose=true;
-        }
-      }
-    }
-    if(!positions.includes(pos) && !tooClose) positions.push(pos);
-  }
-  return positions;
-}
+function reveal(cell){ const r=parseInt(cell.dataset.r), c=parseInt(cell.dataset.c); if(cell.classList.contains('flag')) return; if(isMine(r,c)){ revealAll(true); document.getElementById('message').textContent='Boom! You hit a mine!'; document.getElementById('message').style.color='red'; return; } revealCell(r,c); }
 
-function reveal(cell){
-  const r=parseInt(cell.dataset.r);
-  const c=parseInt(cell.dataset.c);
-  if(cell.classList.contains('flag')) return;
-  if(isMine(r,c)){
-    revealAll(true);
-    document.getElementById('message').textContent='Boom! You hit a mine!';
-    document.getElementById('message').style.color='red';
-    return;
-  }
-  revealCell(r,c);
-}
+function revealCell(r,c){ const cell=board[r][c]; if(cell.classList.contains('revealed')) return; let count=0; for(let dr=-1;dr<=1;dr++){ for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc; if(nr>=0&&nr<size&&nc>=0&&nc<size&&isMine(nr,nc)) count++; }} cell.classList.add('revealed'); if(isMine(r,c)) cell.textContent='💣'; else if(count>0){ cell.textContent=count; cell.dataset.count=count; } else cell.textContent=''; }
 
-function revealCell(r,c){
-  const cell=board[r][c];
-  if(cell.classList.contains('revealed')) return;
-  let count=0;
-  for(let dr=-1;dr<=1;dr++){
-    for(let dc=-1;dc<=1;dc++){
-      const nr=r+dr,nc=c+dc;
-      if(nr>=0 && nr<size && nc>=0 && nc<size && isMine(nr,nc)) count++;
-    }
-  }
-  cell.classList.add('revealed');
-  if(isMine(r,c)) cell.textContent='💣';
-  else if(count>0) cell.textContent=count;
-  else cell.textContent='';
-}
+function revealAll(showMines){ for(let r=0;r<size;r++){ for(let c=0;c<size;c++){ if(showMines && isMine(r,c)) board[r][c].textContent='💣'; revealCell(r,c); }} }
 
-function checkWin(){
-  let revealedCount=0;
-  for(let r=0;r<size;r++){
-    for(let c=0;c<size;c++){
-      if(!isMine(r,c) && board[r][c].classList.contains('revealed')) revealedCount++;
-    }
-  }
-  if(revealedCount===size*size-minesCount){
-    document.getElementById('winMessage').textContent="🎉 Congratulations! You cleared the board!";
-    revealAll(true);
-  }
-}
+function checkWin(){ let revealedCount=0; for(let r=0;r<size;r++){ for(let c=0;c<size;c++){ if(!isMine(r,c) && board[r][c].classList.contains('revealed')) revealedCount++; }} if(revealedCount===size*size-minesCount){ document.getElementById('winMessage').textContent="🎉 Congratulations! You cleared the board!"; revealAll(true); } }
 </script>
 </body>
 </html>
